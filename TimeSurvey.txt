@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timed Survey</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin: 20px; }
+        #survey-container { max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ccc; border-radius: 10px; }
+        .question { display: none; }
+        .active { display: block; }
+        button { margin-top: 10px; padding: 10px; }
+    </style>
+</head>
+<body>
+    <div id="survey-container">
+        <h2>Timed Survey</h2>
+        <div id="questions"></div>
+        <button id="nextBtn" style="display:none;" onclick="nextQuestion()">Next</button>
+    </div>
+    
+    <script>
+        const questions = [
+            "What is your favorite color?",
+            "How often do you exercise?",
+            "What is your preferred mode of transport?",
+            "Do you enjoy reading books?",
+            "What is your favorite type of music?"
+        ];
+        
+        let responses = [];
+        let currentQuestion = 0;
+        const timePerQuestion = 10; // seconds
+        const questionContainer = document.getElementById("questions");
+        const nextBtn = document.getElementById("nextBtn");
+        const scriptURL = "https://script.google.com/macros/s/AKfycbxrzwfxlxGt9dHRmnD0b20wOwz4PmTuzFGeKZa2mqhFoukqO7Yb2uZJKguViQmcfyfgFQ/exec"; // Replace with your script URL
+        
+        function showQuestion(index) {
+            questionContainer.innerHTML = `<p>${questions[index]}</p>
+                <input type='text' id='answer' placeholder='Your answer here'>`;
+            document.getElementById("answer").focus();
+            nextBtn.style.display = "none";
+            setTimeout(nextQuestion, timePerQuestion * 1000);
+        }
+        
+        function nextQuestion() {
+            const answerInput = document.getElementById("answer");
+            if (answerInput) {
+                responses.push({ question: questions[currentQuestion], answer: answerInput.value });
+                sendToGoogleSheets(questions[currentQuestion], answerInput.value);
+            }
+            
+            currentQuestion++;
+            if (currentQuestion < questions.length) {
+                showQuestion(currentQuestion);
+            } else {
+                endSurvey();
+            }
+        }
+        
+        function sendToGoogleSheets(question, answer) {
+            fetch(scriptURL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ question, answer })
+            }).catch(error => console.error("Error!", error));
+        }
+        
+        function endSurvey() {
+            questionContainer.innerHTML = "<h3>Survey Completed! Thank you for your responses.</h3>";
+            nextBtn.style.display = "none";
+        }
+        
+        // Start the survey
+        showQuestion(0);
+    </script>
+</body>
+</html>
