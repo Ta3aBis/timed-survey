@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM VS Real</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+            margin: 20px;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            color: white;
+        }
+        #survey-container {
+            max-width: 600px;
+            margin: auto;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        h2 {
+            color: #fff;
+        }
+        .question {
+            display: none;
+        }
+        .active {
+            display: block;
+        }
+        button {
+            margin-top: 10px;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        input {
+            width: 80%;
+            padding: 8px;
+            margin-top: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+        input::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+        #image-container img {
+            width: 100%;
+            border-radius: 10px;
+            border: 2px solid white;
+        }
+    </style>
+</head>
+<body>
+    <div id="survey-container">
+        <h2>Take a look at the below image for a moment</h2>
+        <div id="image-container">
+            <img src="https://raw.githubusercontent.com/Ta3aBis/timed-survey/refs/heads/main/screenshot_122.png" alt="Survey Image 1">
+        </div>
+        <div id="questions" style="display: none;"></div>
+        <button id="submitBtn" style="display:none;" onclick="submitAnswer()">Submit</button>
+    </div>
+    
+    <script>
+        const questions = [
+            "Is this an AI Generated Image or a Real Website Image?",
+            "Based on which factors did you take your decision?",
+        ];
+        
+        let responses = [];
+        let currentQuestion = 0;
+        const questionContainer = document.getElementById("questions");
+        const submitBtn = document.getElementById("submitBtn");
+        const imageContainer = document.getElementById("image-container");
+        const scriptURL = "YOUR_GOOGLE_APPS_SCRIPT_URL"; // Replace with your script URL
+        
+        function startSurvey() {
+            imageContainer.style.display = "none";
+            questionContainer.style.display = "block";
+            showQuestion(0);
+        }
+        
+        function showQuestion(index) {
+            questionContainer.innerHTML = `<p>${questions[index]}</p>
+                <input type='text' id='answer' placeholder='Your answer here'>`;
+            submitBtn.style.display = "inline-block";
+        }
+        
+        function submitAnswer() {
+            const answerInput = document.getElementById("answer");
+            if (answerInput.value.trim() === "") return; // Prevent empty submissions
+            
+            responses.push({ question: questions[currentQuestion], answer: answerInput.value });
+            sendToGoogleSheets(questions[currentQuestion], answerInput.value);
+            
+            currentQuestion++;
+            if (currentQuestion < questions.length) {
+                showQuestion(currentQuestion);
+            } else {
+                endSurvey();
+            }
+        }
+        
+        function sendToGoogleSheets(question, answer) {
+            fetch(scriptURL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ question, answer })
+            }).catch(error => console.error("Error!", error));
+        }
+        
+        function endSurvey() {
+            questionContainer.innerHTML = "<h3>Survey Completed! Thank you for your responses.</h3>";
+            submitBtn.style.display = "none";
+        }
+        
+        setTimeout(startSurvey, 8000); // Show the image for 8 seconds before starting the survey
+    </script>
+</body>
+</html>
