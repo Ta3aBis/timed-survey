@@ -11,12 +11,12 @@
             font-family: 'Roboto', sans-serif;
             background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
             color: #e3e3e3;
-            overflow: auto; /* Allow scrolling */
+            overflow: auto;
             display: flex;
             justify-content: center;
-            align-items: flex-start; /* Align to top for smaller screens */
+            align-items: flex-start;
             min-height: 100vh;
-            padding: 20px; /* Add padding for smaller screens */
+            padding: 20px;
         }
 
         #survey-container {
@@ -31,8 +31,8 @@
             text-align: center;
             position: relative;
             z-index: 1;
-            overflow-y: auto; /* Allow scrolling inside the container */
-            max-height: 90vh; /* Limit height to viewport */
+            overflow-y: auto;
+            max-height: 90vh;
         }
 
         h2 {
@@ -139,26 +139,60 @@
             box-shadow: 0 0 20px rgba(128, 128, 128, 0.5);
         }
 
+        /* Toggleable buttons for selectable answers */
+        .answer-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .answer-buttons button {
+            padding: 12px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            font-size: 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s ease, border-color 0.3s ease;
+        }
+
+        .answer-buttons button.selected {
+            background: #00bcd4;
+            color: #1a1a2e;
+            border-color: #00bcd4;
+        }
+
         /* Responsive Styles */
         @media (max-width: 600px) {
             body {
-                padding: 10px; /* Reduce padding for smaller screens */
+                padding: 10px;
             }
 
             #survey-container {
-                padding: 20px; /* Reduce padding for smaller screens */
+                padding: 20px;
             }
 
             h2 {
-                font-size: 2rem; /* Reduce font size for smaller screens */
+                font-size: 2rem;
             }
 
             #instructions {
-                font-size: 1rem; /* Reduce font size for smaller screens */
+                font-size: 1rem;
             }
 
             input {
-                width: 90%; /* Increase input width for smaller screens */
+                width: 90%;
+            }
+
+            .answer-buttons {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .answer-buttons button {
+                width: 100%;
             }
         }
     </style>
@@ -200,7 +234,12 @@
         <!-- Questions Section -->
         <div id="questions-section" class="hidden">
             <p id="question-text"></p>
-            <input type="text" id="answer" placeholder="Your answer here">
+            <!-- Text input for open-ended questions -->
+            <input type="text" id="answer" placeholder="Your answer here" class="hidden">
+            <!-- Buttons for selectable answers -->
+            <div class="answer-buttons hidden">
+                <!-- Buttons will be dynamically generated based on question type -->
+            </div>
             <button id="next-question-btn" onclick="nextQuestion()">Next Question</button>
         </div>
 
@@ -219,244 +258,246 @@
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-  
-<script>
-    // Firebase Configuration
-    const firebaseConfig = {
-        apiKey: "AIzaSyBHj-NKrCcFkOkepWXgoTqdm6Rd0KQS3Tw",
-        authDomain: "survey2024-38783.firebaseapp.com",
-        projectId: "survey2024-38783",
-        storageBucket: "survey2024-38783.appspot.com",
-        messagingSenderId: "1050279646280",
-        appId: "1:1050279646280:web:24a74f2c0b9ffa8676f47d",
-        measurementId: "G-VN6L07EQF6"
-    };
 
-    // Initialize Firebase
-    if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
-    }
-    const db = firebase.firestore();
-
-    // Survey Data
-    const images = [
-        "https://raw.githubusercontent.com/Ta3aBis/timed-survey/refs/heads/main/screenshot_122.png",
-        "https://raw.githubusercontent.com/Ta3aBis/timed-survey/refs/heads/main/screenshot%20009223.png",
-        "https://raw.githubusercontent.com/Ta3aBis/timed-survey/refs/heads/main/screenshot%201100.jpg"
-    ];
-
-    const questions = [
-        { text: "Was this a familiar brand/service?", type: "yesno", options: ["Yes", "No"] }, // Yes/No question
-        { text: "Do you think this is a Real or AI Generated Webpage?", type: "realfake", options: ["Genuine", "Artificial"] }, // Real/Fake question
-        { text: "What made you decide this webpage is Real/AI Generated?", type: "text" }, // Open-ended question
-        { text: "Did you base your answer on prior experience with this specific website?", type: "yesno", options: ["Yes", "No"] } // Yes/No question
-    ];
-
-    let currentImageIndex = 0;
-    let currentQuestionIndex = 0;
-    let userName = "";
-    let userEmail = "";
-    let responses = [];
-    let imageTimer;
-    let questionStartTime;
-    let selectedAnswer = "";
-
-    const userInfoSection = document.getElementById("user-info");
-    const imageSection = document.getElementById("image-section");
-    const questionsSection = document.getElementById("questions-section");
-    const endMessage = document.getElementById("end-message");
-    const surveyImage = document.getElementById("survey-image");
-    const questionText = document.getElementById("question-text");
-    const userNameSpan = document.getElementById("user-name");
-    const answerInput = document.getElementById("answer");
-    const answerButtons = document.querySelector(".answer-buttons");
-    const timerDisplay = document.getElementById("timer");
-    const loader = document.getElementById("loader");
-    const largeImageContainer = document.getElementById("large-image-container");
-
-    // Preload images to avoid flickering
-    function preloadImages() {
-        images.forEach((imageUrl) => {
-            const img = new Image();
-            img.src = imageUrl;
-        });
-    }
-
-    preloadImages(); // Preload images when the page loads
-
-    // Disable right-click on images
-    document.addEventListener("contextmenu", (e) => {
-        if (e.target.tagName === "IMG") {
-            e.preventDefault();
-        }
-    });
-
-    // Email validation regex
-    function isValidEmail(email) {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return emailRegex.test(email);
-    }
-
-    function startSurvey() {
-        userName = document.getElementById("name").value.trim();
-        userEmail = document.getElementById("email").value.trim();
-
-        if (userName === "" || userEmail === "") {
-            alert("Please enter your name and email.");
-            return;
-        }
-
-        if (!isValidEmail(userEmail)) {
-            alert("Please enter a valid email address.");
-            return;
-        }
-
-        document.getElementById("instructions").classList.add("hidden");
-        userInfoSection.classList.add("hidden");
-        showImage();
-    }
-
-    function showImage() {
-        if (currentImageIndex >= images.length) {
-            saveResponsesToFirebase();
-            return;
-        }
-
-        // Show loader while image loads
-        loader.classList.remove("hidden");
-        surveyImage.src = images[currentImageIndex];
-
-        // Set the large image source as well
-        const largeImage = document.getElementById("large-image");
-        largeImage.src = images[currentImageIndex];
-
-        // Hide loader and show image once loaded
-        surveyImage.onload = () => {
-            loader.classList.add("hidden");
-            imageSection.classList.remove("hidden");
-
-            // Show the large image container
-            largeImageContainer.classList.remove("hidden");
-            largeImageContainer.classList.add("visible");
-
-            // Start countdown timer
-            let timeLeft = 8;
-            timerDisplay.textContent = `${timeLeft} seconds left`;
-            imageTimer = setInterval(() => {
-                timeLeft--;
-                timerDisplay.textContent = `${timeLeft} seconds left`;
-                if (timeLeft <= 0) {
-                    clearInterval(imageTimer);
-                    imageSection.classList.add("hidden");
-                    largeImageContainer.classList.add("hidden");
-                    largeImageContainer.classList.remove("visible");
-                    showQuestions();
-                }
-            }, 1000);
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBHj-NKrCcFkOkepWXgoTqdm6Rd0KQS3Tw",
+            authDomain: "survey2024-38783.firebaseapp.com",
+            projectId: "survey2024-38783",
+            storageBucket: "survey2024-38783.appspot.com",
+            messagingSenderId: "1050279646280",
+            appId: "1:1050279646280:web:24a74f2c0b9ffa8676f47d",
+            measurementId: "G-VN6L07EQF6"
         };
-    }
 
-    function showQuestions() {
-        const currentQuestion = questions[currentQuestionIndex];
-        questionText.textContent = currentQuestion.text;
+        // Initialize Firebase
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.firestore();
 
-        // Clear previous buttons and input
-        answerButtons.innerHTML = "";
-        answerInput.value = ""; // Clear the text input
-        selectedAnswer = ""; // Reset the selected answer
+        // Survey Data
+        const images = [
+            "https://raw.githubusercontent.com/Ta3aBis/timed-survey/refs/heads/main/screenshot_122.png",
+            "https://raw.githubusercontent.com/Ta3aBis/timed-survey/refs/heads/main/screenshot%20009223.png",
+            "https://raw.githubusercontent.com/Ta3aBis/timed-survey/refs/heads/main/screenshot%201100.jpg"
+        ];
 
-        // Show the appropriate input based on question type
-        if (currentQuestion.type === "text") {
-            answerInput.classList.remove("hidden");
-            answerButtons.classList.add("hidden");
-        } else {
-            answerInput.classList.add("hidden");
-            answerButtons.classList.remove("hidden");
+        const questions = [
+            { text: "Was this a familiar brand/service?", type: "yesno", options: ["Yes", "No"] }, // Yes/No question
+            { text: "Do you think this is a Real or AI Generated Webpage?", type: "realfake", options: ["Genuine", "Artificial"] }, // Real/Fake question
+            { text: "What made you decide this webpage is Real/AI Generated?", type: "text" }, // Open-ended question
+            { text: "Did you base your answer on prior experience with this specific website?", type: "yesno", options: ["Yes", "No"] } // Yes/No question
+        ];
 
-            // Dynamically generate buttons based on question options
-            currentQuestion.options.forEach((option) => {
-                const button = document.createElement("button");
-                button.textContent = option;
-                button.onclick = () => selectAnswer(option);
-                answerButtons.appendChild(button);
+        let currentImageIndex = 0;
+        let currentQuestionIndex = 0;
+        let userName = "";
+        let userEmail = "";
+        let responses = [];
+        let imageTimer;
+        let questionStartTime;
+        let selectedAnswer = "";
+
+        const userInfoSection = document.getElementById("user-info");
+        const imageSection = document.getElementById("image-section");
+        const questionsSection = document.getElementById("questions-section");
+        const endMessage = document.getElementById("end-message");
+        const surveyImage = document.getElementById("survey-image");
+        const questionText = document.getElementById("question-text");
+        const userNameSpan = document.getElementById("user-name");
+        const answerInput = document.getElementById("answer");
+        const answerButtons = document.querySelector(".answer-buttons");
+        const timerDisplay = document.getElementById("timer");
+        const loader = document.getElementById("loader");
+        const largeImageContainer = document.getElementById("large-image-container");
+
+        // Preload images to avoid flickering
+        function preloadImages() {
+            images.forEach((imageUrl) => {
+                const img = new Image();
+                img.src = imageUrl;
             });
         }
 
-        questionsSection.classList.remove("hidden");
-        questionStartTime = Date.now(); // Record start time for the question
-    }
+        preloadImages(); // Preload images when the page loads
 
-    function selectAnswer(answer) {
-        selectedAnswer = answer;
-        // Highlight the selected button
-        const buttons = document.querySelectorAll(".answer-buttons button");
-        buttons.forEach((button) => {
-            button.classList.remove("selected");
-            if (button.textContent === answer) {
-                button.classList.add("selected");
+        // Disable right-click on images
+        document.addEventListener("contextmenu", (e) => {
+            if (e.target.tagName === "IMG") {
+                e.preventDefault();
             }
         });
-    }
 
-    function nextQuestion() {
-        const currentQuestion = questions[currentQuestionIndex];
-        let answer;
-
-        if (currentQuestion.type === "text") {
-            answer = answerInput.value.trim(); // Use the text input answer
-            if (answer === "") {
-                alert("Please provide an answer.");
-                return;
-            }
-        } else {
-            answer = selectedAnswer; // Use the selected answer
-            if (!answer) {
-                alert("Please select an answer.");
-                return;
-            }
+        // Email validation regex
+        function isValidEmail(email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(email);
         }
 
-        const timeTaken = Math.floor((Date.now() - questionStartTime) / 1000); // Time in seconds
+        function startSurvey() {
+            userName = document.getElementById("name").value.trim();
+            userEmail = document.getElementById("email").value.trim();
 
-        responses.push({
-            image: images[currentImageIndex],
-            question: currentQuestion.text,
-            answer: answer,
-            timeTaken: timeTaken
-        });
+            if (userName === "" || userEmail === "") {
+                alert("Please enter your name and email.");
+                return;
+            }
 
-        currentQuestionIndex++;
-        if (currentQuestionIndex >= questions.length) {
-            currentQuestionIndex = 0;
-            currentImageIndex++;
-            questionsSection.classList.add("hidden");
+            if (!isValidEmail(userEmail)) {
+                alert("Please enter a valid email address.");
+                return;
+            }
+
+            document.getElementById("instructions").classList.add("hidden");
+            userInfoSection.classList.add("hidden");
             showImage();
-        } else {
-            showQuestions();
         }
-    }
 
-    function saveResponsesToFirebase() {
-        const userId = `user_${Date.now()}`; // Generate a unique user ID
+        function showImage() {
+            if (currentImageIndex >= images.length) {
+                saveResponsesToFirebase();
+                return;
+            }
 
-        db.collection("surveyResponses").doc(userId).set({
-            name: userName,
-            email: userEmail,
-            responses: responses
-        })
-        .then(() => {
-            console.log("Survey responses saved to Firebase!");
-            endSurvey();
-        })
-        .catch((error) => {
-            console.error("Error saving responses to Firebase:", error);
-            alert("An error occurred while saving your responses. Please try again.");
-        });
-    }
+            // Show loader while image loads
+            loader.classList.remove("hidden");
+            surveyImage.src = images[currentImageIndex];
 
-    function endSurvey() {
-        endMessage.classList.remove("hidden");
-        userNameSpan.textContent = userName;
-        console.log("Survey Responses:", responses);
-    }
-</script>
+            // Set the large image source as well
+            const largeImage = document.getElementById("large-image");
+            largeImage.src = images[currentImageIndex];
+
+            // Hide loader and show image once loaded
+            surveyImage.onload = () => {
+                loader.classList.add("hidden");
+                imageSection.classList.remove("hidden");
+
+                // Show the large image container
+                largeImageContainer.classList.remove("hidden");
+                largeImageContainer.classList.add("visible");
+
+                // Start countdown timer
+                let timeLeft = 8;
+                timerDisplay.textContent = `${timeLeft} seconds left`;
+                imageTimer = setInterval(() => {
+                    timeLeft--;
+                    timerDisplay.textContent = `${timeLeft} seconds left`;
+                    if (timeLeft <= 0) {
+                        clearInterval(imageTimer);
+                        imageSection.classList.add("hidden");
+                        largeImageContainer.classList.add("hidden");
+                        largeImageContainer.classList.remove("visible");
+                        showQuestions();
+                    }
+                }, 1000);
+            };
+        }
+
+        function showQuestions() {
+            const currentQuestion = questions[currentQuestionIndex];
+            questionText.textContent = currentQuestion.text;
+
+            // Clear previous buttons and input
+            answerButtons.innerHTML = "";
+            answerInput.value = ""; // Clear the text input
+            selectedAnswer = ""; // Reset the selected answer
+
+            // Show the appropriate input based on question type
+            if (currentQuestion.type === "text") {
+                answerInput.classList.remove("hidden");
+                answerButtons.classList.add("hidden");
+            } else {
+                answerInput.classList.add("hidden");
+                answerButtons.classList.remove("hidden");
+
+                // Dynamically generate buttons based on question options
+                currentQuestion.options.forEach((option) => {
+                    const button = document.createElement("button");
+                    button.textContent = option;
+                    button.onclick = () => selectAnswer(option);
+                    answerButtons.appendChild(button);
+                });
+            }
+
+            questionsSection.classList.remove("hidden");
+            questionStartTime = Date.now(); // Record start time for the question
+        }
+
+        function selectAnswer(answer) {
+            selectedAnswer = answer;
+            // Highlight the selected button
+            const buttons = document.querySelectorAll(".answer-buttons button");
+            buttons.forEach((button) => {
+                button.classList.remove("selected");
+                if (button.textContent === answer) {
+                    button.classList.add("selected");
+                }
+            });
+        }
+
+        function nextQuestion() {
+            const currentQuestion = questions[currentQuestionIndex];
+            let answer;
+
+            if (currentQuestion.type === "text") {
+                answer = answerInput.value.trim(); // Use the text input answer
+                if (answer === "") {
+                    alert("Please provide an answer.");
+                    return;
+                }
+            } else {
+                answer = selectedAnswer; // Use the selected answer
+                if (!answer) {
+                    alert("Please select an answer.");
+                    return;
+                }
+            }
+
+            const timeTaken = Math.floor((Date.now() - questionStartTime) / 1000); // Time in seconds
+
+            responses.push({
+                image: images[currentImageIndex],
+                question: currentQuestion.text,
+                answer: answer,
+                timeTaken: timeTaken
+            });
+
+            currentQuestionIndex++;
+            if (currentQuestionIndex >= questions.length) {
+                currentQuestionIndex = 0;
+                currentImageIndex++;
+                questionsSection.classList.add("hidden");
+                showImage();
+            } else {
+                showQuestions();
+            }
+        }
+
+        function saveResponsesToFirebase() {
+            const userId = `user_${Date.now()}`; // Generate a unique user ID
+
+            db.collection("surveyResponses").doc(userId).set({
+                name: userName,
+                email: userEmail,
+                responses: responses
+            })
+            .then(() => {
+                console.log("Survey responses saved to Firebase!");
+                endSurvey();
+            })
+            .catch((error) => {
+                console.error("Error saving responses to Firebase:", error);
+                alert("An error occurred while saving your responses. Please try again.");
+            });
+        }
+
+        function endSurvey() {
+            endMessage.classList.remove("hidden");
+            userNameSpan.textContent = userName;
+            console.log("Survey Responses:", responses);
+        }
+    </script>
+</body>
+</html>
