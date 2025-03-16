@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timed Survey</title>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+            margin: 20px;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            color: white;
+        }
+        #survey-container {
+            max-width: 600px;
+            margin: auto;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        h2 {
+            color: #fff;
+        }
+        .question {
+            display: none;
+        }
+        .active {
+            display: block;
+        }
+        button {
+            margin-top: 10px;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        input {
+            width: 80%;
+            padding: 8px;
+            margin-top: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+        input::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+        #image-container img {
+            width: 100%;
+            border-radius: 10px;
+            border: 2px solid white;
+        }
+    </style>
+</head>
+<body>
+    <div id="survey-container">
+        <h2>Timed Survey</h2>
+        <div id="image-container">
+            <img src="your-image-url.jpg" alt="Survey Image">
+        </div>
+        <div id="questions" style="display: none;"></div>
+        <button id="submitBtn" style="display:none;" onclick="submitAnswer()">Submit</button>
+    </div>
+    
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBHj-NKrCcFkOkepWXgoTqdm6Rd0KQS3Tw",
+            authDomain: "survey2024-38783.firebaseapp.com",
+            projectId: "survey2024-38783",
+            storageBucket: "survey2024-38783.firebasestorage.app",
+            messagingSenderId: "1050279646280",
+            appId: "1:1050279646280:web:24a74f2c0b9ffa8676f47d",
+            measurementId:"G-VN6L07EQF6"
+        };
+        
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        const questions = [
+            "What is your favorite color?",
+            "How often do you exercise?",
+            "What is your preferred mode of transport?",
+            "Do you enjoy reading books?",
+            "What is your favorite type of music?"
+        ];
+        
+        let responses = [];
+        let currentQuestion = 0;
+        const questionContainer = document.getElementById("questions");
+        const submitBtn = document.getElementById("submitBtn");
+        const imageContainer = document.getElementById("image-container");
+        
+        function startSurvey() {
+            imageContainer.style.display = "none";
+            questionContainer.style.display = "block";
+            showQuestion(0);
+        }
+        
+        function showQuestion(index) {
+            questionContainer.innerHTML = `<p>${questions[index]}</p>
+                <input type='text' id='answer' placeholder='Your answer here'>`;
+            submitBtn.style.display = "inline-block";
+        }
+        
+        function submitAnswer() {
+            const answerInput = document.getElementById("answer");
+            if (answerInput.value.trim() === "") return; // Prevent empty submissions
+            
+            const response = { question: questions[currentQuestion], answer: answerInput.value };
+            responses.push(response);
+            sendToFirestore(response);
+            
+            currentQuestion++;
+            if (currentQuestion < questions.length) {
+                showQuestion(currentQuestion);
+            } else {
+                endSurvey();
+            }
+        }
+        
+        function sendToFirestore(response) {
+            db.collection("surveyResponses").add(response)
+                .then(() => console.log("Response saved!"))
+                .catch(error => console.error("Error saving response: ", error));
+        }
+        
+        function endSurvey() {
+            questionContainer.innerHTML = "<h3>Survey Completed! Thank you for your responses.</h3>";
+            submitBtn.style.display = "none";
+        }
+        
+        setTimeout(startSurvey, 8000); // Show the image for 8 seconds before starting the survey
+    </script>
+</body>
+</html>
