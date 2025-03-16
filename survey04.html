@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Survey</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+            color: #e3e3e3;
+            overflow: auto;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        #survey-container {
+            max-width: 600px;
+            width: 100%;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            position: relative;
+            z-index: 1;
+            overflow-y: auto;
+            max-height: 90vh;
+        }
+
+        h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2.5rem;
+            color: #00bcd4;
+        }
+
+        #instructions {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        img {
+            width: 100%;
+            border-radius: 10px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 0 20px rgba(128, 128, 128, 0.5);
+            pointer-events: none;
+        }
+
+        input, select {
+            width: 80%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 1rem;
+        }
+
+        input::placeholder, select {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        button {
+            margin-top: 20px;
+            padding: 12px 30px;
+            background: #00bcd4;
+            color: #1a1a2e;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        #timer {
+            font-size: 1.2rem;
+            margin-top: 10px;
+            color: #808080;
+        }
+
+        .loader {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid #00bcd4;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* New Large Image Container Styles */
+        #large-image-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        #large-image-container.visible {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        #large-image {
+            max-width: 95%;
+            max-height: 95vh;
+            border-radius: 10px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 0 20px rgba(128, 128, 128, 0.5);
+        }
+
+        /* Toggleable buttons for selectable answers */
+        .answer-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .answer-buttons button {
+            padding: 12px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            font-size: 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s ease, border-color 0.3s ease;
+        }
+
+        .answer-buttons button.selected {
+            background: #00bcd4;
+            color: #1a1a2e;
+            border-color: #00bcd4;
+        }
+
+        /* Responsive Styles */
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+
+            #survey-container {
+                padding: 20px;
+            }
+
+            h2 {
+                font-size: 2rem;
+            }
+
+            #instructions {
+                font-size: 1rem;
+            }
+
+            input, select {
+                width: 90%;
+            }
+
+            .answer-buttons {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .answer-buttons button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="survey-container">
+        <!-- Instructions Section -->
+        <div id="instructions">
+            <h2>Welcome to the Survey!</h2>
+            <p>
+                This survey is designed to evaluate how well participants can distinguish between real website images and AI-generated website images. 
+                You will be shown a series of images, and for each image, you will answer questions based on factors such as:
+            </p>
+            <ul style="text-align: left; margin: 10px auto; width: 80%;">
+                <li>Website design professionalism</li>
+                <li>Grammatical errors</li>
+                <li>Overall visual appeal</li>
+            </ul>
+            <p>
+                On average, this survey takes about <strong>4 minutes</strong> to complete. Your responses will help us understand human perception of AI-generated content.
+            </p>
+        </div>
+
+        <!-- User Info Section -->
+        <div id="user-info">
+            <p>Enter your details to begin:</p>
+            <input type="text" id="name" placeholder="Enter your name">
+            <input type="email" id="email" placeholder="Enter your email">
+            <input type="number" id="dob-year" placeholder="Year of Birth (Optional)" min="1900" max="2023">
+            <select id="education-level">
+                <option value="">Select your educational level (Optional)</option>
+                <option value="High School">High School</option>
+                <option value="Bachelor's Degree">Bachelor's Degree</option>
+                <option value="Master's Degree">Master's Degree</option>
+                <option value="PhD">PhD</option>
+                <option value="Other">Other</option>
+            </select>
+            <button onclick="startSurvey()">Start Survey</button>
+        </div>
+
+        <!-- Image Section -->
+        <div id="image-section" class="hidden">
+            <img id="survey-image" src="" alt="Survey Image">
+            <div id="timer">8 seconds left</div>
+            <div id="loader" class="loader hidden"></div>
+        </div>
+
+        <!-- Questions Section -->
+        <div id="questions-section" class="hidden">
+            <p id="question-text"></p>
+            <!-- Text input for open-ended questions -->
+            <input type="text" id="answer" placeholder="Your answer here" class="hidden">
+            <!-- Buttons for selectable answers -->
+            <div class="answer-buttons hidden">
+                <!-- Buttons will be dynamically generated based on question type -->
+            </div>
+            <button id="next-question-btn" onclick="nextQuestion()">Next Question</button>
+        </div>
+
+        <!-- End Survey Message -->
+        <div id="end-message" class="hidden">
+            <h2>Survey Completed!</h2>
+            <p>Thank you, <span id="user-name"></span>.</p>
+        </div>
+    </div>
+
+    <!-- New Large Image Container -->
+    <div id="large-image-container" class="hidden">
+        <img id="large-image" src="" alt="">
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBHj-NKrCcFkOkepWXgoTqdm6Rd0KQS3Tw",
+            authDomain: "survey2024-38783.firebaseapp.com",
+            projectId: "survey2024-38783",
+            storageBucket: "survey2024-38783.appspot.com",
+            messagingSenderId: "1050279646280",
+            appId: "1:1050279646280:web:24a74f2c0b9ffa8676f47d",
+            measurementId: "G-VN6L07EQF6"
+        };
+
+        // Initialize Firebase
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.firestore();
+
+        // Survey Data
+        const images = [
+            "https://raw.githubusercontent.com/Ta3aBis/timed-survey/refs/heads/main/screenshot_122.png",
+            "https://raw.githubusercontent.com/Ta3aBis/timed-survey/refs/heads/main/screenshot%20009223.png",
+            "https://raw.githubusercontent.com/Ta3aBis/timed-survey/refs/heads/main/screenshot%201100.jpg"
+        ];
+
+        const questions = [
+            { text: "Was this a familiar brand/service?", type: "yesno", options: ["Yes", "No"] }, // Yes/No question
+            { text: "Do you think this is a Real or AI Generated Webpage?", type: "realfake", options: ["Genuine", "Artificial"] }, // Real/Fake question
+            { text: "What made you decide this webpage is Real/AI Generated?", type: "text" }, // Open-ended question
+            { text: "Did you base your answer on prior experience with this specific website?", type: "yesno", options: ["Yes", "No"] } // Yes/No question
+        ];
+
+        let currentImageIndex = 0;
+        let currentQuestionIndex = 0;
+        let userName = "";
+        let userEmail = "";
+        let userDOB = "";
+        let userEducation = "";
+        let responses = [];
+        let imageTimer;
+        let questionStartTime;
+        let selectedAnswer = "";
+
+        const userInfoSection = document.getElementById("user-info");
+        const imageSection = document.getElementById("image-section");
+        const questionsSection = document.getElementById("questions-section");
+        const endMessage = document.getElementById("end-message");
+        const surveyImage = document.getElementById("survey-image");
+        const questionText = document.getElementById("question-text");
+        const userNameSpan = document.getElementById("user-name");
+        const answerInput = document.getElementById("answer");
+        const answerButtons = document.querySelector(".answer-buttons");
+        const timerDisplay = document.getElementById("timer");
+        const loader = document.getElementById("loader");
+        const largeImageContainer = document.getElementById("large-image-container");
+
+        // Preload images to avoid flickering
+        function preloadImages() {
+            images.forEach((imageUrl) => {
+                const img = new Image();
+                img.src = imageUrl;
+            });
+        }
+
+        preloadImages(); // Preload images when the page loads
+
+        // Disable right-click on images
+        document.addEventListener("contextmenu", (e) => {
+            if (e.target.tagName === "IMG") {
+                e.preventDefault();
+            }
+        });
+
+        // Email validation regex
+        function isValidEmail(email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(email);
+        }
+
+        function startSurvey() {
+            userName = document.getElementById("name").value.trim();
+            userEmail = document.getElementById("email").value.trim();
+            userDOB = document.getElementById("dob-year").value.trim(); // Get Year of Birth
+            userEducation = document.getElementById("education-level").value.trim(); // Get Educational Level
+
+            if (userName === "" || userEmail === "") {
+                alert("Please enter your name and email.");
+                return;
+            }
+
+            if (!isValidEmail(userEmail)) {
+                alert("Please enter a valid email address.");
+                return;
+            }
+
+            document.getElementById("instructions").classList.add("hidden");
+            userInfoSection.classList.add("hidden");
+            showImage();
+        }
+
+        function showImage() {
+            if (currentImageIndex >= images.length) {
+                saveResponsesToFirebase();
+                return;
+            }
+
+            // Show loader while image loads
+            loader.classList.remove("hidden");
+            surveyImage.src = images[currentImageIndex];
+
+            // Set the large image source as well
+            const largeImage = document.getElementById("large-image");
+            largeImage.src = images[currentImageIndex];
+
+            // Hide loader and show image once loaded
+            surveyImage.onload = () => {
+                loader.classList.add("hidden");
+                imageSection.classList.remove("hidden");
+
+                // Show the large image container
+                largeImageContainer.classList.remove("hidden");
+                largeImageContainer.classList.add("visible");
+
+                // Start countdown timer
+                let timeLeft = 8;
+                timerDisplay.textContent = `${timeLeft} seconds left`;
+                imageTimer = setInterval(() => {
+                    timeLeft--;
+                    timerDisplay.textContent = `${timeLeft} seconds left`;
+                    if (timeLeft <= 0) {
+                        clearInterval(imageTimer);
+                        imageSection.classList.add("hidden");
+                        largeImageContainer.classList.add("hidden");
+                        largeImageContainer.classList.remove("visible");
+                        showQuestions();
+                    }
+                }, 1000);
+            };
+        }
+
+        function showQuestions() {
+            const currentQuestion = questions[currentQuestionIndex];
+            questionText.textContent = currentQuestion.text;
+
+            // Clear previous buttons and input
+            answerButtons.innerHTML = "";
+            answerInput.value = ""; // Clear the text input
+            selectedAnswer = ""; // Reset the selected answer
+
+            // Show the appropriate input based on question type
+            if (currentQuestion.type === "text") {
+                answerInput.classList.remove("hidden");
+                answerButtons.classList.add("hidden");
+            } else {
+                answerInput.classList.add("hidden");
+                answerButtons.classList.remove("hidden");
+
+                // Dynamically generate buttons based on question options
+                currentQuestion.options.forEach((option) => {
+                    const button = document.createElement("button");
+                    button.textContent = option;
+                    button.onclick = () => selectAnswer(option);
+                    answerButtons.appendChild(button);
+                });
+            }
+
+            questionsSection.classList.remove("hidden");
+            questionStartTime = Date.now(); // Record start time for the question
+        }
+
+        function selectAnswer(answer) {
+            selectedAnswer = answer;
+            // Highlight the selected button
+            const buttons = document.querySelectorAll(".answer-buttons button");
+            buttons.forEach((button) => {
+                button.classList.remove("selected");
+                if (button.textContent === answer) {
+                    button.classList.add("selected");
+                }
+            });
+        }
+
+        function nextQuestion() {
+            const currentQuestion = questions[currentQuestionIndex];
+            let answer;
+
+            if (currentQuestion.type === "text") {
+                answer = answerInput.value.trim(); // Use the text input answer
+                if (answer === "") {
+                    alert("Please provide an answer.");
+                    return;
+                }
+            } else {
+                answer = selectedAnswer; // Use the selected answer
+                if (!answer) {
+                    alert("Please select an answer.");
+                    return;
+                }
+            }
+
+            const timeTaken = Math.floor((Date.now() - questionStartTime) / 1000); // Time in seconds
+
+            responses.push({
+                image: images[currentImageIndex],
+                question: currentQuestion.text,
+                answer: answer,
+                timeTaken: timeTaken
+            });
+
+            currentQuestionIndex++;
+            if (currentQuestionIndex >= questions.length) {
+                currentQuestionIndex = 0;
+                currentImageIndex++;
+                questionsSection.classList.add("hidden");
+                showImage();
+            } else {
+                showQuestions();
+            }
+        }
+
+        function saveResponsesToFirebase() {
+            const userId = `user_${Date.now()}`; // Generate a unique user ID
+
+            db.collection("surveyResponses").doc(userId).set({
+                name: userName,
+                email: userEmail,
+                dobYear: userDOB, // Save Year of Birth
+                educationLevel: userEducation, // Save Educational Level
+                responses: responses
+            })
+            .then(() => {
+                console.log("Survey responses saved to Firebase!");
+                endSurvey();
+            })
+            .catch((error) => {
+                console.error("Error saving responses to Firebase:", error);
+                alert("An error occurred while saving your responses. Please try again.");
+            });
+        }
+
+        function endSurvey() {
+            endMessage.classList.remove("hidden");
+            userNameSpan.textContent = userName;
+            console.log("Survey Responses:", responses);
+        }
+    </script>
+</body>
+</html>
