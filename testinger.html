@@ -78,7 +78,9 @@
         }
 
         .hidden {
-            display: none;
+            visibility: hidden; /* Use visibility instead of display */
+            opacity: 0; /* Make it fully transparent */
+            transition: opacity 0.3s ease, visibility 0.3s ease; /* Smooth transition */
         }
 
         #timer {
@@ -113,9 +115,17 @@
             justify-content: center;
             align-items: center;
             background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
             border-radius: 10px;
             z-index: 1000;
-            backdrop-filter: blur(10px); /* Applied dynamically in JavaScript */
+            visibility: hidden; /* Initially hidden */
+            opacity: 0; /* Initially transparent */
+            transition: opacity 0.3s ease, visibility 0.3s ease; /* Smooth transition */
+        }
+
+        #large-image-container.visible {
+            visibility: visible; /* Make it visible */
+            opacity: 1; /* Make it fully opaque */
         }
 
         #large-image {
@@ -296,9 +306,9 @@
                 loader.classList.add("hidden");
                 imageSection.classList.remove("hidden");
 
-                // Show the large image container and apply backdrop filter
+                // Show the large image container
                 largeImageContainer.classList.remove("hidden");
-                largeImageContainer.style.backdropFilter = "blur(10px)";
+                largeImageContainer.classList.add("visible");
 
                 // Start countdown timer
                 let timeLeft = 8;
@@ -310,7 +320,7 @@
                         clearInterval(imageTimer);
                         imageSection.classList.add("hidden");
                         largeImageContainer.classList.add("hidden");
-                        largeImageContainer.style.backdropFilter = "none"; // Remove backdrop filter
+                        largeImageContainer.classList.remove("visible");
                         showQuestions();
                     }
                 }, 1000);
