@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Futuristic Image Survey</title>
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+
+    <style>
+        /* Futuristic Background with Animated Particles */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            color: white;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Particle Animation */
+        #particles-js {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+
+        /* Survey Container */
+        #survey-container {
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Heading */
+        h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2.5rem;
+            text-align: center;
+            margin-bottom: 20px;
+            color: #00ffcc;
+            text-shadow: 0 0 10px #00ffcc, 0 0 20px #00ffcc;
+        }
+
+        /* Image Container */
+        #image-container img {
+            width: 100%;
+            border-radius: 10px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 0 20px rgba(0, 255, 204, 0.5);
+        }
+
+        /* User Info Section */
+        #user-info {
+            display: none;
+            text-align: center;
+        }
+
+        #user-info p {
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+        }
+
+        /* Input Fields */
+        input {
+            width: 80%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        input::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #00ffcc;
+            box-shadow: 0 0 10px #00ffcc;
+        }
+
+        /* Buttons */
+        button {
+            margin-top: 20px;
+            padding: 12px 30px;
+            background: #00ffcc;
+            color: #0f0c29;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 10px #00ffcc, 0 0 20px #00ffcc;
+        }
+
+        button:hover {
+            background: #00e6b8;
+            box-shadow: 0 0 20px #00ffcc, 0 0 40px #00ffcc;
+        }
+
+        /* Questions Section */
+        #questions {
+            display: none;
+            text-align: center;
+        }
+
+        #questions p {
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+        }
+
+        /* Submit Button */
+        #submitBtn {
+            display: none;
+        }
+
+        /* End Survey Message */
+        #end-message {
+            display: none;
+            text-align: center;
+            font-size: 1.5rem;
+            color: #00ffcc;
+            text-shadow: 0 0 10px #00ffcc, 0 0 20px #00ffcc;
+        }
+    </style>
+</head>
+<body>
+    <!-- Particle Background -->
+    <div id="particles-js"></div>
+
+    <!-- Survey Container -->
+    <div id="survey-container">
+        <h2>Futuristic Image Survey</h2>
+        
+        <!-- Image Container -->
+        <div id="image-container">
+            <img id="survey-image" src="https://raw.githubusercontent.com/Ta3aBis/timed-survey/refs/heads/main/unnamed.png" alt="Survey Image">
+        </div>
+
+        <!-- User Info Section -->
+        <div id="user-info">
+            <p>Enter your details:</p>
+            <input type="text" id="name" placeholder="Enter your name">
+            <input type="email" id="email" placeholder="Enter your email">
+            <button onclick="startSurvey()">Start Survey</button>
+        </div>
+
+        <!-- Questions Section -->
+        <div id="questions"></div>
+        <button id="nextBtn" style="display:none;" onclick="nextQuestion()">Next</button>
+        <button id="submitBtn" style="display:none;" onclick="submitSurvey()">Submit Survey</button>
+
+        <!-- End Survey Message -->
+        <div id="end-message">
+            <h3>Survey Completed! Thank you, <span id="user-name"></span>.</h3>
+        </div>
+    </div>
+
+    <!-- Particle.js Library -->
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBHj-NKrCcFkOkepWXgoTqdm6Rd0KQS3Tw",
+            authDomain: "survey2024-38783.firebaseapp.com",
+            projectId: "survey2024-38783",
+            storageBucket: "survey2024-38783.firebasestorage.app",
+            messagingSenderId: "1050279646280",
+            appId: "1:1050279646280:web:24a74f2c0b9ffa8676f47d",
+            measurementId: "G-VN6L07EQF6"
+        };
+
+        // Initialize Firebase
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.firestore();
+        console.log("Firebase initialized:", firebase.apps.length > 0);
+
+        // Survey Data
+        const images = [
+            "https://raw.githubusercontent.com/Ta3aBis/timed-survey/refs/heads/main/screenshot_122.png",
+            "https://raw.githubusercontent.com/Ta3aBis/timed-survey/refs/heads/main/screenshot%20009223.png",
+            "https://raw.githubusercontent.com/Ta3aBis/timed-survey/refs/heads/main/screenshot%201100.jpg"
+            // Add more image URLs here
+        ];
+
+        const questionsPerImage = [
+            "What do you notice first in this image?",
+            "How does this image make you feel?",
+            "What story do you think this image tells?"
+        ];
+
+        let currentImageIndex = 0;
+        let currentQuestionIndex = 0;
+        let userId = "";
+        let userName = "";
+        let userEmail = "";
+        let responses = [];
+
+        const questionContainer = document.getElementById("questions");
+        const nextBtn = document.getElementById("nextBtn");
+        const submitBtn = document.getElementById("submitBtn");
+        const imageContainer = document.getElementById("image-container");
+        const userInfoContainer = document.getElementById("user-info");
+        const surveyImage = document.getElementById("survey-image");
+        const endMessage = document.getElementById("end-message");
+        const userNameSpan = document.getElementById("user-name");
+
+        // ⏳ Wait 8 seconds, then ask for user details
+        setTimeout(() => {
+            imageContainer.style.display = "none";
+            userInfoContainer.style.display = "block";
+        }, 8000);
+
+        function startSurvey() {
+            userName = document.getElementById("name").value.trim();
+            userEmail = document.getElementById("email").value.trim();
+
+            if (userName === "" || userEmail === "") {
+                alert("Please enter your name and email.");
+                return;
+            }
+
+            // Generate unique User ID
+            userId = `user_${Date.now()}`;
+            console.log("User ID:", userId);
+            console.log("User Name:", userName);
+            console.log("User Email:", userEmail);
+
+            // Hide user info, show first image and questions
+            userInfoContainer.style.display = "none";
+            imageContainer.style.display = "block";
+            questionContainer.style.display = "block";
+            nextBtn.style.display = "inline-block";
+
+            loadImageAndQuestions();
+        }
+
+        function loadImageAndQuestions() {
+            console.log("Loading image:", images[currentImageIndex]);
+            surveyImage.src = images[currentImageIndex];
+            showQuestion(0);
+        }
+
+        function showQuestion(index) {
+            console.log("Showing question:", questionsPerImage[index]);
+            questionContainer.innerHTML = `<p>${questionsPerImage[index]}</p>
+                <input type='text' id='answer' placeholder='Your answer here'>`;
+        }
+
+        function nextQuestion() {
+            const answerInput = document.getElementById("answer");
+            if (answerInput.value.trim() === "") {
+                alert("Please provide an answer before proceeding.");
+                return;
+            }
+
+            // Save response for the current image and question
+            responses.push({
+                image: images[currentImageIndex],
+                question: questionsPerImage[currentQuestionIndex],
+                answer: answerInput.value
+            });
+            console.log("Response added:", responses[responses.length - 1]);
+
+            currentQuestionIndex++;
+            if (currentQuestionIndex < questionsPerImage.length) {
+                showQuestion(currentQuestionIndex);
+            } else {
+                // Move to the next image
+                currentImageIndex++;
+                if (currentImageIndex < images.length) {
+                    currentQuestionIndex = 0;
+                    loadImageAndQuestions();
+                } else {
+                    console.log("All images and questions completed.");
+                    submitSurvey();
+                }
+            }
+        }
+
+        function submitSurvey() {
+            console.log("Submitting survey...");
+            console.log("Data to save:", {
+                name: userName,
+                email: userEmail,
+                responses: responses
+            });
+
+            // Save all responses to Firestore
+            db.collection("surveyResponses").doc(userId).set({
+                name: userName,
+                email: userEmail,
+                responses: responses
+            }, { merge: true })
+            .then(() => {
+                console.log("Survey data saved successfully!");
+                endSurvey();
+            })
+            .catch(error => {
+                console.error("Error saving survey data:", error);
+                alert("An error occurred while saving your responses. Please try again.");
+            });
+        }
+
+        function endSurvey() {
+            console.log("Survey ended.");
+            questionContainer.style.display = "none";
+            nextBtn.style.display = "none";
+            submitBtn.style.display = "none";
+            endMessage.style.display = "block";
+            userNameSpan.textContent = userName;
+        }
+
+        // Initialize Particle Background
+        particlesJS.load('particles-js', 'particles.json', function() {
+            console.log('Particles.js loaded');
+        });
+    </script>
+</body>
+</html>
