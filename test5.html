@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image-Based Survey</title>
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+    <style>
+        /* Your CSS styles here */
+    </style>
+</head>
+<body>
+    <div id="survey-container">
+        <h2>Image-Based Survey</h2>
+        
+        <div id="image-container">
+            <img id="survey-image" src="" alt="Survey Image">
+        </div>
+
+        <div id="user-info" class="user-info">
+            <p>Enter your details:</p>
+            <input type="text" id="name" placeholder="Enter your name">
+            <input type="email" id="email" placeholder="Enter your email">
+            <button onclick="startSurvey()">Start Survey</button>
+        </div>
+
+        <div id="questions" class="question"></div>
+        <button id="nextBtn" style="display:none;" onclick="nextQuestion()">Next</button>
+        <button id="submitBtn" style="display:none;" onclick="submitSurvey()">Submit Survey</button>
+    </div>
+
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBHj-NKrCcFkOkepWXgoTqdm6Rd0KQS3Tw",
+            authDomain: "survey2024-38783.firebaseapp.com",
+            projectId: "survey2024-38783",
+            storageBucket: "survey2024-38783.firebasestorage.app",
+            messagingSenderId: "1050279646280",
+            appId: "1:1050279646280:web:24a74f2c0b9ffa8676f47d",
+            measurementId: "G-VN6L07EQF6"
+        };
+
+        // Initialize Firebase
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.firestore();
+        console.log("Firebase initialized:", firebase.apps.length > 0);
+
+        // Survey Data
+        const images = [
+            "image1.jpg",
+            "image2.jpg",
+            "image3.jpg"
+            // Add more image URLs here
+        ];
+
+        const questionsPerImage = [
+            "What do you notice first in this image?",
+            "How does this image make you feel?",
+            "What story do you think this image tells?"
+        ];
+
+        let currentImageIndex = 0;
+        let currentQuestionIndex = 0;
+        let userId = "";
+        let userName = "";
+        let userEmail = "";
+        let responses = [];
+
+        const questionContainer = document.getElementById("questions");
+        const nextBtn = document.getElementById("nextBtn");
+        const submitBtn = document.getElementById("submitBtn");
+        const imageContainer = document.getElementById("image-container");
+        const userInfoContainer = document.getElementById("user-info");
+        const surveyImage = document.getElementById("survey-image");
+
+        // ⏳ Wait 8 seconds, then ask for user details
+        setTimeout(() => {
+            imageContainer.style.display = "none";
+            userInfoContainer.style.display = "block";
+        }, 8000);
+
+        function startSurvey() {
+            userName = document.getElementById("name").value.trim();
+            userEmail = document.getElementById("email").value.trim();
+
+            if (userName === "" || userEmail === "") {
+                alert("Please enter your name and email.");
+                return;
+            }
+
+            // Generate unique User ID
+            userId = `user_${Date.now()}`;
+            console.log("User ID:", userId);
+            console.log("User Name:", userName);
+            console.log("User Email:", userEmail);
+
+            // Hide user info, show first image and questions
+            userInfoContainer.style.display = "none";
+            imageContainer.style.display = "block";
+            questionContainer.style.display = "block";
+            nextBtn.style.display = "inline-block";
+
+            loadImageAndQuestions();
+        }
+
+        function loadImageAndQuestions() {
+            console.log("Loading image:", images[currentImageIndex]);
+            surveyImage.src = images[currentImageIndex];
+            showQuestion(0);
+        }
+
+        function showQuestion(index) {
+            console.log("Showing question:", questionsPerImage[index]);
+            questionContainer.innerHTML = `<p>${questionsPerImage[index]}</p>
+                <input type='text' id='answer' placeholder='Your answer here'>`;
+        }
+
+        function nextQuestion() {
+            const answerInput = document.getElementById("answer");
+            if (answerInput.value.trim() === "") {
+                alert("Please provide an answer before proceeding.");
+                return;
+            }
+
+            // Save response for the current image and question
+            responses.push({
+                image: images[currentImageIndex],
+                question: questionsPerImage[currentQuestionIndex],
+                answer: answerInput.value
+            });
+            console.log("Response added:", responses[responses.length - 1]);
+
+            currentQuestionIndex++;
+            if (currentQuestionIndex < questionsPerImage.length) {
+                showQuestion(currentQuestionIndex);
+            } else {
+                // Move to the next image
+                currentImageIndex++;
+                if (currentImageIndex < images.length) {
+                    currentQuestionIndex = 0;
+                    loadImageAndQuestions();
+                } else {
+                    console.log("All images and questions completed.");
+                    submitSurvey();
+                }
+            }
+        }
+
+        function submitSurvey() {
+            console.log("Submitting survey...");
+            console.log("Data to save:", {
+                name: userName,
+                email: userEmail,
+                responses: responses
+            });
+
+            // Save all responses to Firestore
+            db.collection("surveyResponses").doc(userId).set({
+                name: userName,
+                email: userEmail,
+                responses: responses
+            }, { merge: true }) // Use { merge: true } to avoid overwriting existing data
+            .then(() => {
+                console.log("Survey data saved successfully!");
+                endSurvey();
+            })
+            .catch(error => {
+                console.error("Error saving survey data:", error);
+                alert("An error occurred while saving your responses. Please try again.");
+            });
+        }
+
+        function endSurvey() {
+            console.log("Survey ended.");
+            questionContainer.innerHTML = `<h3>Survey Completed! Thank you, ${userName}.</h3>`;
+            nextBtn.style.display = "none";
+            submitBtn.style.display = "none";
+        }
+    </script>
+</body>
+</html>
