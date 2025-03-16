@@ -76,7 +76,7 @@
         </div>
 
         <div id="user-info" class="user-info">
-            <p>Enter your details to start the survey:</p>
+            <p>Enter your details:</p>
             <input type="text" id="name" placeholder="Enter your name">
             <input type="email" id="email" placeholder="Enter your email">
             <button onclick="startSurvey()">Start Survey</button>
@@ -99,7 +99,10 @@
             measurementId: "G-VN6L07EQF6"
         };
 
-        firebase.initializeApp(firebaseConfig);
+        // Initialize Firebase
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
         const db = firebase.firestore();
 
         // Survey Data
@@ -200,18 +203,27 @@
         }
 
         function submitSurvey() {
+            // Log the data for debugging
+            console.log("Saving data:", {
+                name: userName,
+                email: userEmail,
+                responses: responses
+            });
+
             // Save all responses to Firestore
             db.collection("surveyResponses").doc(userId).set({
                 name: userName,
                 email: userEmail,
                 responses: responses
-            }).then(() => {
+            }, { merge: true }) // Use { merge: true } to avoid overwriting existing data
+            .then(() => {
                 console.log("Survey data saved successfully!");
-            }).catch(error => {
+                endSurvey();
+            })
+            .catch(error => {
                 console.error("Error saving survey data:", error);
+                alert("An error occurred while saving your responses. Please try again.");
             });
-
-            endSurvey();
         }
 
         function endSurvey() {
