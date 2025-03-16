@@ -44,7 +44,6 @@
 
         img {
             width: 100%;
-            height: 100%;
             border-radius: 10px;
             border: 2px solid rgba(255, 255, 255, 0.3);
             box-shadow: 0 0 20px rgba(128, 128, 128, 0.5);
@@ -102,6 +101,30 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        /* New Large Image Container Styles */
+        #large-image-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 95%;
+            height: 95vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 10px;
+            z-index: 1000;
+            backdrop-filter: blur(10px); /* Applied dynamically in JavaScript */
+        }
+
+        #large-image {
+            max-width: 100%;
+            max-height: 100%;
+            border-radius: 10px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 0 20px rgba(128, 128, 128, 0.5);
+        }
     </style>
 </head>
 <body>
@@ -150,6 +173,11 @@
             <h2>Survey Completed!</h2>
             <p>Thank you, <span id="user-name"></span>.</p>
         </div>
+    </div>
+
+    <!-- New Large Image Container -->
+    <div id="large-image-container" class="hidden">
+        <img id="large-image" src="" alt="">
     </div>
 
     <!-- Firebase SDK -->
@@ -205,6 +233,7 @@
         const answerInput = document.getElementById("answer");
         const timerDisplay = document.getElementById("timer");
         const loader = document.getElementById("loader");
+        const largeImageContainer = document.getElementById("large-image-container");
 
         // Preload images to avoid flickering
         function preloadImages() {
@@ -258,10 +287,18 @@
             loader.classList.remove("hidden");
             surveyImage.src = images[currentImageIndex];
 
+            // Set the large image source as well
+            const largeImage = document.getElementById("large-image");
+            largeImage.src = images[currentImageIndex];
+
             // Hide loader and show image once loaded
             surveyImage.onload = () => {
                 loader.classList.add("hidden");
                 imageSection.classList.remove("hidden");
+
+                // Show the large image container and apply backdrop filter
+                largeImageContainer.classList.remove("hidden");
+                largeImageContainer.style.backdropFilter = "blur(10px)";
 
                 // Start countdown timer
                 let timeLeft = 8;
@@ -272,6 +309,8 @@
                     if (timeLeft <= 0) {
                         clearInterval(imageTimer);
                         imageSection.classList.add("hidden");
+                        largeImageContainer.classList.add("hidden");
+                        largeImageContainer.style.backdropFilter = "none"; // Remove backdrop filter
                         showQuestions();
                     }
                 }, 1000);
