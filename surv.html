@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Timed Survey</title>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"></script>
     <style>
         body {
             font-family: 'Arial', sans-serif;
@@ -74,23 +74,22 @@
         <div id="questions" style="display: none;"></div>
         <button id="submitBtn" style="display:none;" onclick="submitAnswer()">Submit</button>
     </div>
-    
+
     <script>
-        // Firebase Configuration
+        // 🔥 Initialize Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyBHj-NKrCcFkOkepWXgoTqdm6Rd0KQS3Tw",
             authDomain: "survey2024-38783.firebaseapp.com",
             projectId: "survey2024-38783",
             storageBucket: "survey2024-38783.firebasestorage.app",
             messagingSenderId: "1050279646280",
-            appId: "1:1050279646280:web:24a74f2c0b9ffa8676f47d",
-            measurementId:"G-VN6L07EQF6"
+            appId: "1:1050279646280:web:24a74f2c0b9ffa8676f47d"
         };
-        
-        // Initialize Firebase
+
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
+        // Questions for the survey
         const questions = [
             "What is your favorite color?",
             "How often do you exercise?",
@@ -104,26 +103,25 @@
         const questionContainer = document.getElementById("questions");
         const submitBtn = document.getElementById("submitBtn");
         const imageContainer = document.getElementById("image-container");
-        
+
         function startSurvey() {
             imageContainer.style.display = "none";
             questionContainer.style.display = "block";
             showQuestion(0);
         }
-        
+
         function showQuestion(index) {
             questionContainer.innerHTML = `<p>${questions[index]}</p>
                 <input type='text' id='answer' placeholder='Your answer here'>`;
             submitBtn.style.display = "inline-block";
         }
-        
+
         function submitAnswer() {
             const answerInput = document.getElementById("answer");
             if (answerInput.value.trim() === "") return; // Prevent empty submissions
             
-            const response = { question: questions[currentQuestion], answer: answerInput.value };
-            responses.push(response);
-            sendToFirestore(response);
+            responses.push({ question: questions[currentQuestion], answer: answerInput.value });
+            saveToFirestore(questions[currentQuestion], answerInput.value);
             
             currentQuestion++;
             if (currentQuestion < questions.length) {
@@ -132,19 +130,24 @@
                 endSurvey();
             }
         }
-        
-        function sendToFirestore(response) {
-            db.collection("surveyResponses").add(response)
-                .then(() => console.log("Response saved!"))
-                .catch(error => console.error("Error saving response: ", error));
+
+        function saveToFirestore(question, answer) {
+            db.collection("surveyResponses").add({
+                question: question,
+                answer: answer,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            }).then(() => {
+                console.log("Saved to Firestore");
+            }).catch(error => console.error("Error saving data:", error));
         }
-        
+
         function endSurvey() {
             questionContainer.innerHTML = "<h3>Survey Completed! Thank you for your responses.</h3>";
             submitBtn.style.display = "none";
         }
-        
-        setTimeout(startSurvey, 8000); // Show the image for 8 seconds before starting the survey
+
+        // Show the image for 8 seconds, then start the survey
+        setTimeout(startSurvey, 8000);
     </script>
 </body>
 </html>
