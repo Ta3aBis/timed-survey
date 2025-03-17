@@ -499,15 +499,15 @@
             const timeTaken = Math.floor((Date.now() - questionStartTime) / 1000); // Time in seconds
 
             // Add the response to the responses array
-            responses.push({
+            const response = {
                 image: images[currentImageIndex],
                 question: currentQuestion.text,
                 answer: answer,
                 timeTaken: timeTaken
-            });
+            };
 
-            // Save the updated responses array to Firestore
-            saveResponsesToFirebase();
+            // Save the response to Firestore
+            saveResponseToFirebase(response);
 
             currentQuestionIndex++;
             if (currentQuestionIndex >= questions.length) {
@@ -520,25 +520,25 @@
             }
         }
 
-        function saveResponsesToFirebase() {
-            // Generate a unique document ID using the user's email and a timestamp
-            const timestamp = Date.now(); // Get the current timestamp
-            const sanitizedEmail = userEmail.replace(/[^a-zA-Z0-9]/g, "_"); // Sanitize the email
-            const userId = `${sanitizedEmail}_${timestamp}`; // Combine email and timestamp
+        function saveResponseToFirebase(response) {
+            // Generate a consistent document ID using the user's email (sanitized)
+            const sanitizedEmail = userEmail.replace(/[^a-zA-Z0-9]/g, "_");
+            const userId = sanitizedEmail; // Use email as the document ID
 
+            // Append the new response to the existing responses array in Firestore
             db.collection("surveyResponses").doc(userId).set({
                 name: userName,
                 email: userEmail,
                 dobYear: userDOB, // Save Year of Birth
                 educationLevel: userEducation, // Save Educational Level
-                responses: responses // Save all responses in an array
-            }, { merge: true }) // Merge with existing data if any
+                responses: firebase.firestore.FieldValue.arrayUnion(response) // Append the new response
+            }, { merge: true }) // Merge with existing data
             .then(() => {
-                console.log("Responses updated in Firebase!");
+                console.log("Response saved to Firebase!");
             })
             .catch((error) => {
-                console.error("Error updating responses in Firebase:", error);
-                alert("An error occurred while saving your responses. Please try again.");
+                console.error("Error saving response to Firebase:", error);
+                alert("An error occurred while saving your response. Please try again.");
             });
         }
 
