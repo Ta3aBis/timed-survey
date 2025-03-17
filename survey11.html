@@ -227,17 +227,10 @@
     <div id="survey-container">
         <!-- Instructions Section -->
         <div id="instructions">
-            <h2>Welcome to the Survey!</h2>
+            <h2>Real vs AI Generated Images Survey</h2>
             <p>
                 This survey is designed to evaluate how well participants can distinguish between real website images and AI-generated website images. 
-                You will be shown a series of images, and for each image, you will answer questions based on factors such as:
-            </p>
-            <ul style="text-align: left; margin: 10px auto; width: 80%;">
-                <li>Website design professionalism</li>
-                <li>Grammatical errors</li>
-                <li>Overall visual appeal</li>
-            </ul>
-            <p>
+                You will be shown a series of images, and for each image, you will answer 3 questions based on what you see.
                 On average, this survey takes about <strong>4 minutes</strong> to complete. Your responses will help us understand human perception of AI-generated content.
             </p>
         </div>
@@ -314,16 +307,22 @@
 
         // Survey Data
         const images = [
-            "https://raw.githubusercontent.com/Ta3aBis/timed-survey/refs/heads/main/screenshot_122.png",
-            "https://raw.githubusercontent.com/Ta3aBis/timed-survey/refs/heads/main/screenshot%20009223.png",
-            "https://raw.githubusercontent.com/Ta3aBis/timed-survey/refs/heads/main/screenshot%201100.jpg"
+            "https://raw.githubusercontent.com/Ta3aBis/timed-survey/refs/heads/main/fbb.png", //fake fb
+            "https://raw.githubusercontent.com/Ta3aBis/timed-survey/refs/heads/main/aza.png", // Fake Aza
+            "https://raw.githubusercontent.com/Ta3aBis/timed-survey/refs/heads/main/abb.png", // Official BA
+            "https://raw.githubusercontent.com/Ta3aBis/timed-survey/refs/heads/main/neo.png", // Fake neo
+            "https://raw.githubusercontent.com/Ta3aBis/timed-survey/refs/heads/main/net.png", // Fake ntfx
+            "https://raw.githubusercontent.com/Ta3aBis/timed-survey/refs/heads/main/tters.png", // Official tters 
+            "https://raw.githubusercontent.com/Ta3aBis/timed-survey/refs/heads/main/in.png", // Official Inst
+            "https://raw.githubusercontent.com/Ta3aBis/timed-survey/refs/heads/main/lkd.png", // Official Lkdn
+            "https://raw.githubusercontent.com/Ta3aBis/timed-survey/refs/heads/main/afa.png", //official afa
+            "https://raw.githubusercontent.com/Ta3aBis/timed-survey/refs/heads/main/mic.png"
         ];
 
         const questions = [
             { text: "Was this a familiar brand/service?", type: "yesno", options: ["Yes", "No"] }, // Yes/No question
             { text: "Do you think this is a Real or AI Generated Webpage?", type: "realfake", options: ["Genuine", "Artificial"] }, // Real/Fake question
-            { text: "What made you decide this webpage is Real/AI Generated?", type: "text" }, // Open-ended question
-            { text: "Did you base your answer on prior experience with this specific website?", type: "yesno", options: ["Yes", "No"] } // Yes/No question
+            { text: "What made you decide this webpage is Real/AI Generated?", type: "text" } // Open-ended question
         ];
 
         let currentImageIndex = 0;
